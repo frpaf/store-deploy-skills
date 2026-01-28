@@ -1,0 +1,8 @@
+{
+  "name": "store-deploy-skills",
+  "description": "Skills to deploy applications to expo and flutter to playstore and app store",
+  "version": "1.0.0",
+  "author": {
+    "name": "frpaf"
+  }
+}
