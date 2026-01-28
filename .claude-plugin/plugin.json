@@ -4,5 +4,7 @@
   "version": "1.0.0",
   "author": {
     "name": "frpaf"
-  }
+  },
+  "repository": "https://github.com/frpaf/store-deploy-skills",                                                                                                     
+  "keywords": ["mobile", "deployment", "ios", "android", "expo", "flutter"]  
 }
