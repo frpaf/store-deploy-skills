@@ -14,7 +14,17 @@ Manage app version numbers using the `store-deploy` CLI.
 ## Pre-flight: Ensure CLI Installed
 
 ```bash
-command -v store-deploy >/dev/null 2>&1 || npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/
+REGISTRY="https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/"
+if ! command -v store-deploy >/dev/null 2>&1; then
+  npm install -g @egdw/store-deploy --registry="$REGISTRY"
+else
+  CURRENT=$(npm list -g @egdw/store-deploy --json 2>/dev/null | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));console.log(d.dependencies['@egdw/store-deploy'].version)}catch{console.log('unknown')}")
+  LATEST=$(npm view @egdw/store-deploy version --registry="$REGISTRY" 2>/dev/null || echo "unknown")
+  if [ "$CURRENT" != "$LATEST" ] && [ "$LATEST" != "unknown" ]; then
+    echo "Updating @egdw/store-deploy from $CURRENT to $LATEST"
+    npm install -g @egdw/store-deploy --registry="$REGISTRY"
+  fi
+fi
 ```
 
 ## Commands
