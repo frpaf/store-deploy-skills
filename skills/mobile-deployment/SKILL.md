@@ -72,20 +72,29 @@ You are a mobile app deployment assistant for projects using the `store-deploy` 
 
 ## Deployment Workflow
 
-### 1. Pre-flight Checks
+### 1. MANDATORY — Install or Update CLI
 
-**MANDATORY — Run this exact command first. Do NOT simplify or skip.**
+**You MUST run this exact command first before any other command.** This ensures the CLI is installed and up-to-date. Do NOT simplify or skip this step.
+
 ```bash
 npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/
+```
 
-# Check credentials
+This will install the CLI if missing, or update it to the latest version if outdated. npm handles both cases.
+
+### 2. Check Credentials
+
+```bash
 test -f .deploy-config.json && echo "Configured" || echo "Not configured"
+```
 
-# Check project type and version
+### 3. Check Project Type and Version
+
+```bash
 store-deploy version get --json
 ```
 
-### 2. Version Management
+### 4. Version Management
 
 ```bash
 # Get current version
@@ -100,7 +109,7 @@ store-deploy sync --json
 store-deploy version patch --json
 ```
 
-### 3. Changelog Generation
+### 5. Changelog Generation
 
 ```bash
 # Find last tag
@@ -110,7 +119,7 @@ git describe --tags --abbrev=0
 git log $(git describe --tags --abbrev=0)..HEAD --oneline --no-merges
 ```
 
-### 4. Deploy
+### 6. Deploy
 
 ```bash
 # iOS
@@ -120,7 +129,7 @@ store-deploy ios --changelog "- Feature 1\n- Bug fix 2"
 store-deploy beta --changelog "- Feature 1\n- Bug fix 2"
 ```
 
-### 5. Verify
+### 7. Verify
 
 ```bash
 # Check iOS status

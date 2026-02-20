@@ -12,18 +12,29 @@ allowed-tools: Bash, Read
 
 Deploy the current mobile app to app stores using the `store-deploy` CLI.
 
-## Pre-flight Checks
+## Pre-flight: MANDATORY — Install or Update CLI
 
-Before deploying, verify:
+**You MUST run this exact command first before any other command.** This ensures the CLI is installed and up-to-date. Do NOT simplify or skip this step.
 
-1. **MANDATORY — Install or update CLI**. You MUST run this exact command first. Do NOT simplify or skip:
 ```bash
 npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/
 ```
-2. **Credentials exist**: `test -f .deploy-config.json && echo "OK" || echo "Missing"`
-3. **Current version**: `store-deploy version get --json`
+
+This will install the CLI if missing, or update it to the latest version if outdated. npm handles both cases.
+
+## Pre-flight: Check Credentials
+
+```bash
+test -f .deploy-config.json && echo "OK" || echo "Missing"
+```
 
 If credentials are missing, inform the user to run `store-deploy setup` first.
+
+## Pre-flight: Check Current Version
+
+```bash
+store-deploy version get --json
+```
 
 ## Deployment Commands
 

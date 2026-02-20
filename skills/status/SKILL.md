@@ -21,6 +21,20 @@ npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifacto
 
 This will install the CLI if missing, or update it to the latest version if outdated. npm handles both cases.
 
+## Pre-flight: Check Credentials
+
+```bash
+test -f .deploy-config.json && echo "OK" || echo "Missing"
+```
+
+If credentials are missing, inform the user to run `store-deploy setup` first.
+
+## Pre-flight: Check Current Version
+
+```bash
+store-deploy version get --json
+```
+
 ## Commands
 
 ### Local Version
