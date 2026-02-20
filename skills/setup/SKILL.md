@@ -11,6 +11,12 @@ allowed-tools: Bash, Read
 
 The `store-deploy setup` command is interactive and must be run manually by the user.
 
+## Pre-flight: Ensure CLI Installed
+
+```bash
+command -v store-deploy >/dev/null 2>&1 || npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/
+```
+
 ## Check Current Setup
 
 ```bash

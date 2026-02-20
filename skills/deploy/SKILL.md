@@ -16,7 +16,10 @@ Deploy the current mobile app to app stores using the `store-deploy` CLI.
 
 Before deploying, verify:
 
-1. **CLI installed**: `command -v store-deploy || echo "Not installed"`
+1. **CLI installed**: Check and auto-install if missing:
+```bash
+command -v store-deploy >/dev/null 2>&1 || npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/
+```
 2. **Credentials exist**: `test -f .deploy-config.json && echo "OK" || echo "Missing"`
 3. **Current version**: `store-deploy version get --json`
 
@@ -82,7 +85,7 @@ The CLI resolves credentials in this order:
 
 | Error | Solution |
 |-------|----------|
-| CLI not found | `npm install -g store-deploy` |
+| CLI not found | `npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/` |
 | Credentials missing | Run `store-deploy setup` |
 | Signing not configured | Run with auto-signing prompt or configure manually |
 | Build failure | Check Xcode/Gradle configuration |

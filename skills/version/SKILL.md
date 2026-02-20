@@ -11,6 +11,12 @@ allowed-tools: Bash, Read
 
 Manage app version numbers using the `store-deploy` CLI.
 
+## Pre-flight: Ensure CLI Installed
+
+```bash
+command -v store-deploy >/dev/null 2>&1 || npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/
+```
+
 ## Commands
 
 ### Get Current Version

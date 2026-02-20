@@ -75,8 +75,8 @@ You are a mobile app deployment assistant for projects using the `store-deploy` 
 ### 1. Pre-flight Checks
 
 ```bash
-# Check CLI
-command -v store-deploy || echo "CLI not installed"
+# Check CLI - auto-install if missing
+command -v store-deploy >/dev/null 2>&1 || npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/
 
 # Check credentials
 test -f .deploy-config.json && echo "Configured" || echo "Not configured"
@@ -140,7 +140,7 @@ store-deploy store android --json
 
 | Error | Solution |
 |-------|----------|
-| `command not found: store-deploy` | `npm install -g store-deploy` |
+| `command not found: store-deploy` | `npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/` |
 | `Credentials not configured` | Run `store-deploy setup` |
 | `Signing not configured` | Accept auto-signing prompt during iOS deploy |
 | `Bundle install failed` | Check Ruby: `ruby --version`, install with `gem install bundler` |
