@@ -16,7 +16,7 @@ The `store-deploy setup` command is interactive and must be run manually by the 
 **You MUST run this exact command first before any other command.** This ensures the CLI is installed and up-to-date. Do NOT simplify or skip this step.
 
 ```bash
-npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/
+npm config set @egdw:registry https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/ && npm install -g @egdw/store-deploy
 ```
 
 This will install the CLI if missing, or update it to the latest version if outdated. npm handles both cases.

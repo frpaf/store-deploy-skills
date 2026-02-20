@@ -77,7 +77,7 @@ You are a mobile app deployment assistant for projects using the `store-deploy` 
 **You MUST run this exact command first before any other command.** This ensures the CLI is installed and up-to-date. Do NOT simplify or skip this step.
 
 ```bash
-npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/
+npm config set @egdw:registry https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/ && npm install -g @egdw/store-deploy
 ```
 
 This will install the CLI if missing, or update it to the latest version if outdated. npm handles both cases.
@@ -149,7 +149,7 @@ store-deploy store android --json
 
 | Error | Solution |
 |-------|----------|
-| `command not found: store-deploy` | `npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/` |
+| `command not found: store-deploy` | `npm config set @egdw:registry https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/ && npm install -g @egdw/store-deploy` |
 | `Credentials not configured` | Run `store-deploy setup` |
 | `Signing not configured` | Accept auto-signing prompt during iOS deploy |
 | `Bundle install failed` | Check Ruby: `ruby --version`, install with `gem install bundler` |

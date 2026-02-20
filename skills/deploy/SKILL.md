@@ -17,7 +17,7 @@ Deploy the current mobile app to app stores using the `store-deploy` CLI.
 **You MUST run this exact command first before any other command.** This ensures the CLI is installed and up-to-date. Do NOT simplify or skip this step.
 
 ```bash
-npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/
+npm config set @egdw:registry https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/ && npm install -g @egdw/store-deploy
 ```
 
 This will install the CLI if missing, or update it to the latest version if outdated. npm handles both cases.
@@ -96,7 +96,7 @@ The CLI resolves credentials in this order:
 
 | Error | Solution |
 |-------|----------|
-| CLI not found | `npm install -g @egdw/store-deploy --registry=https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/` |
+| CLI not found | `npm config set @egdw:registry https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/ && npm install -g @egdw/store-deploy` |
 | Credentials missing | Run `store-deploy setup` |
 | Signing not configured | Run with auto-signing prompt or configure manually |
 | Build failure | Check Xcode/Gradle configuration |
