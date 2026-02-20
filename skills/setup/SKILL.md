@@ -33,7 +33,7 @@ store-deploy setup
 
 This interactive wizard will:
 1. Detect project type (Flutter, Expo, Native iOS/Android)
-2. Check for EG Vault token (auto-fetch credentials if available)
+2. Check for HashiCorp Vault credentials (auto-fetch credentials if available)
 3. Collect iOS credentials (if applicable)
 4. Collect Android credentials (if applicable)
 5. Create Fastlane configuration files (Fastfile, Appfile, .env)
@@ -44,7 +44,7 @@ This interactive wizard will:
 
 The setup wizard checks credentials in this order:
 
-1. **EG Vault** - If vault token is configured, auto-downloads credentials
+1. **HashiCorp Vault** - If AppRole credentials are configured (VAULT_ROLE_ID + VAULT_SECRET_ID), auto-downloads credentials
 2. **CLI flags** - Explicit credentials passed via command line
 3. **Interactive prompts** - Manual entry as fallback
 
@@ -117,8 +117,10 @@ After setup, `.deploy-config.json` contains:
     "keyPassword": "..."
   },
   "vault": {
-    "token": "...",
-    "baseUrl": "..."
+    "roleId": "...",
+    "secretId": "...",
+    "address": "https://vault-egdw.cto.aksdev.egdev.eu",
+    "enginePath": "smd-mobile"
   }
 }
 ```

@@ -66,9 +66,9 @@ You are a mobile app deployment assistant for projects using the `store-deploy` 
 ### Vault Integration
 | Command | Purpose |
 |---------|---------|
-| `store-deploy vault verify` | Verify EG Vault token |
-| `store-deploy vault secrets` | Search/display vault secrets |
-| `store-deploy vault folders` | List vault folders |
+| `store-deploy vault verify` | Verify HashiCorp Vault AppRole credentials |
+| `store-deploy vault secrets --path PATH` | Read a secret at a KV v2 path |
+| `store-deploy vault list` | List keys in KV v2 engine |
 
 ## Deployment Workflow
 
@@ -132,7 +132,7 @@ store-deploy store android --json
 
 ## Credential Resolution Priority
 
-1. **EG Vault** (if token configured) - Auto-downloads .p8, JSON keys, keystores
+1. **HashiCorp Vault** (if AppRole configured) - Auto-downloads .p8, JSON keys, keystores
 2. **Config file** - Reads from `.deploy-config.json`
 3. **Interactive prompts** - Manual entry fallback
 

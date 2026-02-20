@@ -66,7 +66,7 @@ Flags:
 
 The CLI resolves credentials in this order:
 
-1. **EG Vault** (if configured) - Auto-downloads credentials
+1. **HashiCorp Vault** (if AppRole configured) - Auto-downloads credentials
 2. **Config file** - Reads from `.deploy-config.json`
 3. **Interactive prompts** - Falls back to manual entry
 
