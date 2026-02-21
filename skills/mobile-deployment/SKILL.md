@@ -184,6 +184,127 @@ Examples:
 4. **Check status after iOS deploy** - TestFlight has processing time
 5. **Use specific tracks** - Deploy to internal/alpha before production
 
+## Output Formatting
+
+You have two output modes: **clean** (default) and **verbose**.
+
+### Detecting Mode
+
+- **Default: clean mode**
+- Switch to **verbose** if the user says any of: "verbose", "show logs", "debug", "show output", "show me everything", "--verbose", "-v"
+- **Failure escalation**: If any step fails in clean mode, automatically re-display that step's full raw output so the user can diagnose the issue
+
+### Clean Mode (default)
+
+In clean mode, your goal is to feel like a modern CLI tool (think Vercel, Turborepo, create-next-app). Follow these rules strictly:
+
+**Suppress raw output.** NEVER show raw Bash tool output to the user. Run commands, parse their JSON results silently, and present only structured summaries.
+
+**Always use `--json` flag** on all store-deploy commands so you can parse structured output.
+
+**Use a step tracker.** As you complete each phase of the workflow, render a progress tracker. Use these exact unicode markers:
+- `✓` for completed steps (with key result in parentheses)
+- `◉` for the currently running step (with `...` suffix)
+- `○` for pending steps
+
+Example during deployment:
+```
+  ✓ CLI installed (v2.4.1)
+  ✓ Credentials verified
+  ✓ Version checked (1.2.3 → local, 1.2.2 → store)
+  ✓ Version bumped (1.2.3 → 1.2.4, code: 10204)
+  ✓ Changelog generated (4 commits)
+  ◉ Deploying to TestFlight...
+  ○ Post-deploy verification
+```
+
+**Re-render the full tracker after each step completes.** The user should always see the complete current state, not just incremental updates.
+
+**Show a summary panel on completion** using box-drawing characters:
+```
+┌─────────────────────────────────────────┐
+│  ✓ Deploy Complete                      │
+├─────────────────────────────────────────┤
+│  App:        MyApp                      │
+│  Platform:   iOS → TestFlight           │
+│  Version:    1.2.4 (10204)             │
+│  Changelog:  4 items                    │
+│  Status:     Processing                 │
+└─────────────────────────────────────────┘
+```
+
+**On failure**, show an error panel instead:
+```
+┌─────────────────────────────────────────┐
+│  ✗ Deploy Failed                        │
+├─────────────────────────────────────────┤
+│  Phase:      Signing                    │
+│  Error:      Credentials expired        │
+│  Suggestion: Run store-deploy setup     │
+└─────────────────────────────────────────┘
+```
+
+Then automatically show the full raw output of the failed command in a code block so the user can diagnose.
+
+**Between steps**, describe what you're doing in ONE short line only. Example: "Checking store versions..." — do not explain the command, flags, or what you expect.
+
+### Verbose Mode
+
+In verbose mode, show everything. The user wants full visibility.
+
+**Show each command before running it** with a `$` prefix:
+```
+$ store-deploy version get --json
+```
+
+**Show the full raw output** in fenced code blocks after each command.
+
+**Still use the step tracker**, but include output nested under each completed step:
+```
+  ✓ CLI installed (v2.4.1)
+    $ npm config set @egdw:registry ... && npm install -g @egdw/store-deploy
+    added 142 packages in 11.8s
+
+  ✓ Credentials verified
+    $ test -f .deploy-config.json && echo "OK"
+    OK
+
+  ◉ Deploying to TestFlight...
+    $ store-deploy ios --changelog "- Feature 1\n- Bug fix 2"
+```
+
+**Still show the summary panel at the end**, same format as clean mode.
+
+### Formatting for Non-Deploy Actions
+
+For simpler actions (version check, status query, sync), use a lighter format:
+
+**Version operations** — single result line:
+```
+  ✓ Version: 1.2.4 (code: 10204) — expo
+```
+
+**Status queries** — comparison panel:
+```
+┌─────────────────────────────────────────┐
+│  Status: MyApp                          │
+├─────────────────────────────────────────┤
+│  Local:      1.2.4 (10204)             │
+│  TestFlight: 1.2.3 (10203) Processing  │
+│  Play Store:                            │
+│    internal: 1.2.3 (10203)             │
+│    beta:     1.2.2 (10202)             │
+│    prod:     1.1.0 (10100)             │
+├─────────────────────────────────────────┤
+│  → Ready to deploy (local > store)      │
+└─────────────────────────────────────────┘
+```
+
+**Version bump** — before/after:
+```
+  ✓ Version bumped: 1.2.3 → 1.2.4 (10203 → 10204)
+```
+
 ## Conversation Guidelines
 
 - Start by checking if CLI and credentials are configured

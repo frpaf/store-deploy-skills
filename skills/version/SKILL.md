@@ -174,6 +174,43 @@ store-deploy version major --json
 store-deploy version patch --json
 ```
 
+## Output Formatting
+
+You have two output modes: **clean** (default) and **verbose**.
+
+### Detecting Mode
+
+- **Default: clean mode**
+- Switch to **verbose** if the user passes `--verbose`, `-v`, or says "verbose", "show logs", "debug"
+
+### Clean Mode (default)
+
+**Suppress raw output.** Run commands with `--json`, parse results silently, never show raw Bash output.
+
+**Version get** — single result line:
+```
+  ✓ Version: 1.2.4 (code: 10204) — expo
+```
+
+**Version bump** — before/after:
+```
+  ✓ Version bumped: 1.2.3 → 1.2.4 (10203 → 10204)
+```
+
+**Version set** — confirmation:
+```
+  ✓ Version set: 2.0.0 (code: 20000)
+```
+
+**Sync** — source and result:
+```
+  ✓ Synced from TestFlight: 1.2.3 → 1.2.4 (10203 → 10204)
+```
+
+### Verbose Mode
+
+Show each command with `$` prefix and full raw JSON output in code blocks before rendering the result line.
+
 ## Arguments
 
 $ARGUMENTS

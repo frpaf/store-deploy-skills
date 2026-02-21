@@ -160,6 +160,46 @@ store-deploy status ios --json
 
 TestFlight processing typically takes 5-30 minutes.
 
+## Output Formatting
+
+You have two output modes: **clean** (default) and **verbose**.
+
+### Detecting Mode
+
+- **Default: clean mode**
+- Switch to **verbose** if the user passes `--verbose`, `-v`, or says "verbose", "show logs", "debug"
+
+### Clean Mode (default)
+
+**Suppress raw output.** Run all commands with `--json`, parse results silently, never show raw Bash output.
+
+**Render a status panel** using box-drawing characters:
+```
+┌─────────────────────────────────────────┐
+│  Status: MyApp                          │
+├─────────────────────────────────────────┤
+│  Local:      1.2.4 (10204) — expo      │
+│  TestFlight: 1.2.3 (10203) Processing  │
+│  Play Store:                            │
+│    internal: 1.2.3 (10203)             │
+│    beta:     1.2.2 (10202)             │
+│    prod:     1.1.0 (10100)             │
+├─────────────────────────────────────────┤
+│  → Ready to deploy (local > store)      │
+└─────────────────────────────────────────┘
+```
+
+Adapt the panel to show only the platforms that are configured/queried. Include the recommendation line at the bottom:
+- `→ Ready to deploy (local > store)`
+- `→ Already deployed — bump version first`
+- `→ Local behind — sync recommended`
+
+If a platform is not configured, show `not configured` instead of a version.
+
+### Verbose Mode
+
+Show each command with `$` prefix and full raw JSON output in code blocks. Still render the summary panel at the end.
+
 ## Arguments
 
 $ARGUMENTS

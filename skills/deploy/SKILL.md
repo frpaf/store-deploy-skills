@@ -118,6 +118,80 @@ store-deploy store android --json
 store-deploy version patch --json
 ```
 
+## Output Formatting
+
+You have two output modes: **clean** (default) and **verbose**.
+
+### Detecting Mode
+
+- **Default: clean mode**
+- Switch to **verbose** if the user passes `--verbose`, `-v`, or says "verbose", "show logs", "debug", "show output"
+- **Failure escalation**: If any step fails in clean mode, automatically show that step's full raw output
+
+### Clean Mode (default)
+
+**Suppress raw output.** NEVER show raw Bash output. Run commands, parse JSON results silently, present structured summaries only.
+
+**Always use `--json` flag** on all store-deploy commands.
+
+**Render a step tracker** after each phase completes. Use these markers:
+- `✓` completed (with key result)
+- `◉` currently running (with `...`)
+- `○` pending
+
+```
+  ✓ CLI installed (v2.4.1)
+  ✓ Credentials verified
+  ✓ Version: 1.2.4 (10204)
+  ✓ Changelog ready (4 items)
+  ◉ Deploying to TestFlight...
+  ○ Post-deploy verification
+```
+
+Re-render the full tracker after each step so the user sees complete state.
+
+**Show a summary panel on completion:**
+```
+┌─────────────────────────────────────────┐
+│  ✓ Deploy Complete                      │
+├─────────────────────────────────────────┤
+│  App:        MyApp                      │
+│  Platform:   iOS → TestFlight           │
+│  Version:    1.2.4 (10204)             │
+│  Changelog:  4 items                    │
+│  Status:     Processing                 │
+└─────────────────────────────────────────┘
+```
+
+**On failure**, show error panel then full raw output:
+```
+┌─────────────────────────────────────────┐
+│  ✗ Deploy Failed                        │
+├─────────────────────────────────────────┤
+│  Phase:      Signing                    │
+│  Error:      Credentials expired        │
+│  Suggestion: Run store-deploy setup     │
+└─────────────────────────────────────────┘
+```
+
+### Verbose Mode
+
+Show everything — each command with `$` prefix, full raw output in code blocks, step tracker with nested output:
+```
+  ✓ CLI installed (v2.4.1)
+    $ npm config set @egdw:registry ... && npm install -g @egdw/store-deploy
+    added 142 packages in 11.8s
+
+  ✓ Credentials verified
+    $ test -f .deploy-config.json && echo "OK"
+    OK
+
+  ◉ Deploying to TestFlight...
+    $ store-deploy ios --changelog "- Feature 1"
+```
+
+Still show the summary panel at the end.
+
 ## Arguments
 
 $ARGUMENTS

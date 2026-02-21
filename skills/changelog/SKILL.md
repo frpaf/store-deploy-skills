@@ -129,3 +129,29 @@ store-deploy production --changelog "GENERATED_CHANGELOG"
 3. **Keep it concise** - App stores have character limits
 4. **Group by category** - Features, fixes, improvements
 5. **No internal jargon** - Avoid technical implementation details
+
+## Output Formatting
+
+You have two output modes: **clean** (default) and **verbose**.
+
+### Detecting Mode
+
+- **Default: clean mode**
+- Switch to **verbose** if the user passes `--verbose`, `-v`, or says "verbose", "show logs", "debug"
+
+### Clean Mode (default)
+
+**Suppress raw command output.** Run git commands silently, parse the results, then present the changelog directly.
+
+**Show a header line** with commit count and range:
+```
+  ✓ Changelog: 6 commits since v1.2.3
+```
+
+**Then render the changelog** in the requested format (bullet, markdown, or conventional) — clean, no git hashes, no raw output.
+
+If the user plans to deploy, present the changelog and ask for confirmation before passing it to the deploy command.
+
+### Verbose Mode
+
+Show each git command with `$` prefix and full raw output in code blocks. Then render the formatted changelog below.
