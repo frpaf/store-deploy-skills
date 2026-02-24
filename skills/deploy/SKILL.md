@@ -22,19 +22,16 @@ npm config set @egdw:registry https://artifactory.eg.dk/artifactory/api/npm/egdw
 
 This will install the CLI if missing, or update it to the latest version if outdated. npm handles both cases.
 
-## Pre-flight: Check Credentials
+## Pre-flight: Setup & Credential Verification
+
+**Always run setup before deploying** — it's idempotent and ensures Vault secrets are fetched and fastlane files are generated. Do NOT use `test -f .deploy-config.json` — the config file existing does not mean credentials are functional.
 
 ```bash
-test -f .deploy-config.json && echo "OK" || echo "Missing"
-```
-
-If credentials are missing, inform the user to run `store-deploy setup` first.
-
-## Pre-flight: Check Current Version
-
-```bash
+store-deploy setup
 store-deploy version get --json
 ```
+
+If `store-deploy version get --json` fails after setup, surface the error and stop.
 
 ## Deployment Commands
 
@@ -182,9 +179,11 @@ Show everything — each command with `$` prefix, full raw output in code blocks
     $ npm config set @egdw:registry ... && npm install -g @egdw/store-deploy
     added 142 packages in 11.8s
 
-  ✓ Credentials verified
-    $ test -f .deploy-config.json && echo "OK"
-    OK
+  ✓ Setup & credentials verified
+    $ store-deploy setup
+    ✓ Configured for Flutter project
+    $ store-deploy version get --json
+    {"version":"1.2.3","code":10203}
 
   ◉ Deploying to TestFlight...
     $ store-deploy ios --changelog "- Feature 1"

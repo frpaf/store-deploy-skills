@@ -1,22 +1,25 @@
 ---
 name: mobile-deployment
 description: Conversational mobile app deployment assistant. Activates when user mentions deploying, releasing, publishing, TestFlight, Play Store, app store, version bump, release notes, or build submission.
-user-invocable: false
+argument-hint: "[ios|android|internal|alpha|beta|production] [--verbose]"
+user-invocable: true
 disable-model-invocation: false
 allowed-tools: Bash, Read, Grep
 ---
 
 # Mobile App Deployment Assistant
 
-You are a mobile app deployment assistant for projects using the `store-deploy` CLI.
+You are a mobile app deployment assistant for projects using the `store-deploy` CLI. This skill handles setup, version management, status queries, and deployment — all in one flow.
 
 ## Complete CLI Commands Reference
 
 ### Setup & Configuration
 | Command | Purpose |
 |---------|---------|
-| `store-deploy setup` | Interactive credential setup wizard |
+| `store-deploy setup` | Interactive credential setup wizard (idempotent — safe to re-run) |
 | `store-deploy teardown` | Remove Fastlane configuration |
+| `store-deploy teardown --keep-credentials` | Remove Fastlane but keep .deploy-config.json |
+| `store-deploy teardown --keep-gemfile` | Remove Fastlane but keep Gemfile |
 
 ### Version Management
 | Command | Purpose |
@@ -51,6 +54,19 @@ You are a mobile app deployment assistant for projects using the `store-deploy` 
 | `store-deploy beta -c "TEXT"` | Deploy to beta track |
 | `store-deploy production -c "TEXT"` | Deploy to production |
 
+### Deployment Flags
+| Flag | Applies To | Purpose |
+|------|-----------|---------|
+| `--changelog TEXT` / `-c TEXT` | Both | Release notes |
+| `--skip-sync` | Both | Skip version sync before deploy |
+| `--skip-signing-setup` | iOS | Skip automatic signing setup |
+| `--clean` / `-C` | iOS | Clean build before deploying |
+| `--update-gems` / `-u` | Both | Update Fastlane before deploying |
+| `--track TRACK` / `-t` | Android | Target track (internal/alpha/beta/production) |
+| `--apk` | Android | Build APK instead of AAB |
+| `--release-status STATUS` / `-s` | Android | Release status (draft/completed) |
+| `--json` / `-j` | Both | Output results as JSON |
+
 ### Build (Android only)
 | Command | Purpose |
 |---------|---------|
@@ -61,7 +77,7 @@ You are a mobile app deployment assistant for projects using the `store-deploy` 
 ### Status
 | Command | Purpose |
 |---------|---------|
-| `store-deploy status ios --json` | Check TestFlight processing status |
+| `store-deploy status ios --json` | Check TestFlight processing status (includes review state) |
 
 ### Vault Integration
 | Command | Purpose |
@@ -72,35 +88,39 @@ You are a mobile app deployment assistant for projects using the `store-deploy` 
 
 ## Deployment Workflow
 
+Every action (deploy, status check, version query) follows the same first two steps. Do NOT skip them.
+
 ### 1. MANDATORY — Install or Update CLI
 
-**You MUST run this exact command first before any other command.** This ensures the CLI is installed and up-to-date. Do NOT simplify or skip this step.
+**You MUST run this exact command first before any other command.** Do NOT simplify or skip this step.
 
 ```bash
 npm config set @egdw:registry https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/ && npm install -g @egdw/store-deploy
 ```
 
-This will install the CLI if missing, or update it to the latest version if outdated. npm handles both cases.
+### 2. MANDATORY — Setup & Credential Verification
 
-### 2. Check Credentials
+**Always run `store-deploy setup` before any store query or deploy.** It is idempotent — safe to re-run every time. This ensures:
+- Vault secrets are fetched (if Vault is configured)
+- Fastlane files (.p8 key, Appfile, .env, Gemfile) are generated
+- Expired or rotated credentials are refreshed
+
+**IMPORTANT: A `.deploy-config.json` file existing does NOT mean credentials are functional.** The config file can exist while Vault hasn't been contacted, fastlane files haven't been generated, or credentials have expired. Never use `test -f .deploy-config.json` as a credential check.
 
 ```bash
-test -f .deploy-config.json && echo "Configured" || echo "Not configured"
-```
+# Always run setup — it handles Vault, fastlane file generation, bundle install
+store-deploy setup
 
-### 3. Check Project Type and Version
-
-```bash
+# Then verify credentials work with a functional check
 store-deploy version get --json
 ```
 
-### 4. Version Management
+If `store-deploy version get --json` fails after setup, surface the error and **stop** — do not proceed.
+
+### 3. Version Management
 
 ```bash
-# Get current version
-store-deploy version get --json
-
-# Query store versions
+# Query store versions (also validates store credentials are functional)
 store-deploy store ios --json
 store-deploy store android --json
 
@@ -109,7 +129,7 @@ store-deploy sync --json
 store-deploy version patch --json
 ```
 
-### 5. Changelog Generation
+### 4. Changelog Generation
 
 ```bash
 # Find last tag
@@ -119,7 +139,7 @@ git describe --tags --abbrev=0
 git log $(git describe --tags --abbrev=0)..HEAD --oneline --no-merges
 ```
 
-### 6. Deploy
+### 5. Deploy
 
 ```bash
 # iOS
@@ -129,7 +149,7 @@ store-deploy ios --changelog "- Feature 1\n- Bug fix 2"
 store-deploy beta --changelog "- Feature 1\n- Bug fix 2"
 ```
 
-### 7. Verify
+### 6. Verify
 
 ```bash
 # Check iOS status
@@ -141,48 +161,128 @@ store-deploy store android --json
 
 ## Credential Resolution Priority
 
-1. **HashiCorp Vault** (if AppRole configured) - Auto-downloads .p8, JSON keys, keystores
-2. **Config file** - Reads from `.deploy-config.json`
-3. **Interactive prompts** - Manual entry fallback
+1. **HashiCorp Vault** (if AppRole configured) — Auto-downloads .p8, JSON keys, keystores
+2. **Config file** — Reads from `.deploy-config.json`
+3. **Interactive prompts** — Manual entry fallback
+
+## Setup Details
+
+The `store-deploy setup` wizard:
+1. Detects project type (Flutter, Expo, Native iOS/Android)
+2. Checks for HashiCorp Vault credentials (auto-fetch if available)
+3. Collects iOS credentials (if applicable)
+4. Collects Android credentials (if applicable)
+5. Creates Fastlane configuration files (Fastfile, Appfile, .env)
+6. Creates Gemfile with pinned Fastlane version
+7. Runs `bundle install` for dependencies
+
+### iOS Credentials Required
+
+| Credential | Description | Where to Find |
+|------------|-------------|---------------|
+| Key ID | App Store Connect API Key ID | App Store Connect -> Users and Access -> Integrations -> Keys |
+| Issuer ID | App Store Connect Issuer ID | Same page as Key ID (shown at top) |
+| Team ID | Apple Developer Team ID | Developer Portal -> Membership |
+| Bundle ID | App identifier (com.example.app) | Xcode project or app.json/pubspec.yaml |
+| .p8 File | API Key file (AuthKey_XXXXX.p8) | Downloaded when creating API key (one-time download) |
+
+### Android Credentials Required
+
+| Credential | Description | Where to Find |
+|------------|-------------|---------------|
+| Package Name | App identifier (com.example.app) | build.gradle or app.json/pubspec.yaml |
+| JSON Key | Google Play Service Account key | Google Cloud Console |
+| Keystore Path | Release signing keystore (.jks) | Your project or generate new |
+| Keystore Password | Keystore password | Set during keystore creation |
+| Key Alias | Key alias in keystore | Set during keystore creation |
+| Key Password | Key password | Set during keystore creation |
+
+### Configuration File Structure
+
+After setup, `.deploy-config.json` contains:
+
+```json
+{
+  "projectType": "expo|flutter|native-android|native-ios",
+  "ios": {
+    "keyId": "XXXXXXXXXX",
+    "issuerId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "teamId": "XXXXXXXXXX",
+    "bundleId": "com.example.app",
+    "p8FilePath": "path/to/AuthKey.p8"
+  },
+  "android": {
+    "packageName": "com.example.app",
+    "jsonKeyPath": "path/to/google-play-key.json",
+    "buildType": "aab",
+    "keystorePath": "path/to/release.jks",
+    "keystorePassword": "...",
+    "keyAlias": "...",
+    "keyPassword": "..."
+  },
+  "vault": {
+    "roleId": "...",
+    "secretId": "...",
+    "address": "https://vault-egdw.cto.aksdev.egdev.eu",
+    "enginePath": "smd-mobile"
+  }
+}
+```
+
+### Fastlane Files Created
+
+| File | Location | Purpose |
+|------|----------|---------|
+| Fastfile | ios/fastlane/ or fastlane/ | Lane definitions |
+| Appfile | ios/fastlane/ or fastlane/ | App identifiers |
+| .env | ios/fastlane/ or fastlane/ | Environment variables |
+| Gemfile | ios/ or root | Ruby dependencies |
+
+## Version Details
+
+### Version Code Formula
+
+```
+code = major * 10000 + minor * 100 + patch
+```
+
+Examples: 1.2.3 -> 10203, 2.0.0 -> 20000, 1.15.7 -> 11507
+
+### Project Type Support
+
+| Project Type | Version Location | Format | Notes |
+|--------------|------------------|--------|-------|
+| Expo | app.json | version + ios.buildNumber + android.versionCode | All three updated together |
+| Flutter | pubspec.yaml | X.Y.Z+CODE | Format: `version: 1.2.3+10203` |
+| Native Android | build.gradle | versionCode + versionName | Supports Groovy and Kotlin DSL |
+| Native iOS | .xcworkspace | Not managed (Xcode) | N/A |
+
+### Version Comparison Logic
+
+Compare `code` values from local vs store:
+- Local code > Store code → Ready to deploy
+- Local code = Store code → Need to bump version
+- Local code < Store code → Need to sync from store
 
 ## Error Recovery
 
 | Error | Solution |
 |-------|----------|
 | `command not found: store-deploy` | `npm config set @egdw:registry https://artifactory.eg.dk/artifactory/api/npm/egdw-store-deploy-npm-local/ && npm install -g @egdw/store-deploy` |
-| `Credentials not configured` | Run `store-deploy setup` |
+| `Credentials not configured` | Run `store-deploy setup` (always run before store queries) |
 | `Signing not configured` | Accept auto-signing prompt during iOS deploy |
 | `Bundle install failed` | Check Ruby: `ruby --version`, install with `gem install bundler` |
 | `Fastlane error` | Check terminal output, verify credentials |
 | `Version already exists` | Bump version: `store-deploy version patch` |
-
-## Project Types Supported
-
-| Type | Detection | Version Location | Fastlane Location |
-|------|-----------|------------------|-------------------|
-| Flutter | pubspec.yaml | pubspec.yaml (X.Y.Z+CODE) | ios/fastlane, android/fastlane |
-| Expo | app.json | app.json | ios/fastlane, android/fastlane |
-| Native Android | build.gradle | build.gradle | fastlane/ (root) |
-| Native iOS | .xcworkspace | Not managed (Xcode) | fastlane/ (root) |
-
-## Version Code Formula
-
-```
-code = major * 10000 + minor * 100 + patch
-```
-
-Examples:
-- 1.2.3 -> 10203
-- 2.0.0 -> 20000
-- 1.15.7 -> 11507
+| `Build failure` | Check Xcode/Gradle configuration |
 
 ## Best Practices
 
-1. **Always sync before deploy** - Ensures version is higher than store
-2. **Use meaningful changelogs** - Users see these in app stores
-3. **Bump version after deploy** - Prepare for next release
-4. **Check status after iOS deploy** - TestFlight has processing time
-5. **Use specific tracks** - Deploy to internal/alpha before production
+1. **Always sync before deploy** — Ensures version is higher than store
+2. **Use meaningful changelogs** — Users see these in app stores
+3. **Bump version after deploy** — Prepare for next release
+4. **Check status after iOS deploy** — TestFlight has processing time (5-30 min)
+5. **Use specific tracks** — Deploy to internal/alpha before production
 
 ## Output Formatting
 
@@ -210,7 +310,7 @@ In clean mode, your goal is to feel like a modern CLI tool (think Vercel, Turbor
 Example during deployment:
 ```
   ✓ CLI installed (v2.4.1)
-  ✓ Credentials verified
+  ✓ Setup & credentials verified
   ✓ Version checked (1.2.3 → local, 1.2.2 → store)
   ✓ Version bumped (1.2.3 → 1.2.4, code: 10204)
   ✓ Changelog generated (4 commits)
@@ -265,9 +365,11 @@ $ store-deploy version get --json
     $ npm config set @egdw:registry ... && npm install -g @egdw/store-deploy
     added 142 packages in 11.8s
 
-  ✓ Credentials verified
-    $ test -f .deploy-config.json && echo "OK"
-    OK
+  ✓ Setup complete (Vault credentials fetched)
+    $ store-deploy setup
+    ✓ Configured for Flutter project
+    $ store-deploy version get --json
+    {"version":"1.2.3","code":10203}
 
   ◉ Deploying to TestFlight...
     $ store-deploy ios --changelog "- Feature 1\n- Bug fix 2"
@@ -282,6 +384,11 @@ For simpler actions (version check, status query, sync), use a lighter format:
 **Version operations** — single result line:
 ```
   ✓ Version: 1.2.4 (code: 10204) — expo
+```
+
+**Version bump** — before/after:
+```
+  ✓ Version bumped: 1.2.3 → 1.2.4 (10203 → 10204)
 ```
 
 **Status queries** — comparison panel:
@@ -300,16 +407,32 @@ For simpler actions (version check, status query, sync), use a lighter format:
 └─────────────────────────────────────────┘
 ```
 
-**Version bump** — before/after:
-```
-  ✓ Version bumped: 1.2.3 → 1.2.4 (10203 → 10204)
-```
+Adapt the panel to show only the platforms that are configured/queried. Include the recommendation:
+- `→ Ready to deploy (local > store)`
+- `→ Already deployed — bump version first`
+- `→ Local behind — sync recommended`
+
+If a platform is not configured, show `not configured` instead of a version.
 
 ## Conversation Guidelines
 
-- Start by checking if CLI and credentials are configured
+- **Every action starts with**: install/update CLI → `store-deploy setup` → verify with `store-deploy version get --json`
+- If verification fails, surface the error and stop — do not proceed
 - Query current version and store versions to understand state
 - Suggest version bump if local <= store version
 - Offer to generate changelog from git history
 - Execute deployment with proper changelog
 - Report results and suggest next steps
+
+## Arguments
+
+$ARGUMENTS
+
+Argument determines the target:
+- `ios` — Deploy to TestFlight
+- `android` — Deploy to Play Store (defaults to internal track)
+- `internal` — Deploy to Play Store internal testing track
+- `alpha` — Deploy to Play Store closed/alpha track
+- `beta` — Deploy to Play Store open/beta track
+- `production` — Deploy to Play Store production
+- No argument — Ask which platform and track to deploy to

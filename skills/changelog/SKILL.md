@@ -21,19 +21,14 @@ npm config set @egdw:registry https://artifactory.eg.dk/artifactory/api/npm/egdw
 
 This will install the CLI if missing, or update it to the latest version if outdated. npm handles both cases.
 
-## Pre-flight: Check Credentials
+## Pre-flight: Setup & Credential Verification
 
 ```bash
-test -f .deploy-config.json && echo "OK" || echo "Missing"
-```
-
-If credentials are missing, inform the user to run `store-deploy setup` first.
-
-## Pre-flight: Check Current Version
-
-```bash
+store-deploy setup
 store-deploy version get --json
 ```
+
+If version get fails after setup, surface the error and stop.
 
 ## Find Last Tag
 
